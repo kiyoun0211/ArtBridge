@@ -1,7 +1,15 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { BuyerHeader } from '@/components/layout/BuyerHeader'
 import { PreviewClient } from './PreviewClient'
+
+const ARTIST_EN_NAMES: Record<string, string> = {
+  박지혜: 'Park Jihye',
+  김민수: 'Kim Minsoo',
+  이해인: 'Lee Haein',
+  정태양: 'Jung Taeyang',
+}
 
 type Props = {
   params: Promise<{ id: string }>
@@ -14,13 +22,17 @@ export default async function ArtworkPreviewPage({ params }: Props) {
 
   const { data: artwork } = await admin
     .from('artworks')
-    .select('id, title, width_cm, height_cm, mockup_url, storage_path')
+    .select('id, title, width_cm, height_cm, mockup_url, storage_path, price, profiles!artworks_artist_id_fkey(display_name, email)')
     .eq('id', id)
     .single()
 
   if (!artwork) notFound()
 
-  // Resolve artwork image URL: mockup_url first, then signed storage URL
+  const artworkWithProfile = artwork as typeof artwork & {
+    profiles: { display_name: string | null; email: string } | null
+  }
+
+  // Resolve artwork image URL
   let imageUrl: string | null = artwork.mockup_url ?? null
   if (!imageUrl && artwork.storage_path) {
     const { data: urlData } = await admin.storage
@@ -29,45 +41,73 @@ export default async function ArtworkPreviewPage({ params }: Props) {
     imageUrl = urlData?.signedUrl ?? null
   }
 
+  const displayName = artworkWithProfile.profiles?.display_name ?? artworkWithProfile.profiles?.email ?? '작가'
+  const artistName = (ARTIST_EN_NAMES[displayName] ?? '') || displayName
+
   return (
-    <main
-      className="min-h-screen px-4 md:px-6 py-10"
-      style={{ background: 'var(--color-background)' }}
-    >
-      <div className="w-full max-w-2xl mx-auto">
-        {/* Back link */}
+    <div style={{ minHeight: '100vh', background: 'var(--bone)' }}>
+      {/* Top bar */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          padding: '18px 32px',
+          borderBottom: '1px solid var(--rule-soft)',
+          alignItems: 'center',
+          background: 'color-mix(in srgb, var(--bone) 88%, transparent)',
+          backdropFilter: 'blur(14px)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+        }}
+      >
         <Link
           href={`/artwork/${id}`}
-          className="inline-block mb-8 text-[14px]"
-          style={{ color: 'var(--color-muted)' }}
+          className="atelier-label"
+          style={{ color: 'var(--ink-mid)', display: 'flex', alignItems: 'center', gap: 6 }}
         >
           ← 작품 상세로
         </Link>
-
-        {/* Page heading */}
-        <div className="mb-8">
-          <h1
-            className="text-[28px] font-semibold leading-[1.2] mb-2"
-            style={{ color: 'var(--color-foreground)' }}
-          >
-            내 공간에 미리 보기
-          </h1>
-          <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
-            방 사진과 벽 폭(cm)을 알려주시면, 작품을 정확한 크기로 합성해드립니다.
-          </p>
-        </div>
-
-        {/* Client component: form + result */}
-        <PreviewClient
-          artwork={{
-            id: artwork.id,
-            title: artwork.title,
-            width_cm: artwork.width_cm,
-            height_cm: artwork.height_cm,
-            imageUrl,
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            fontSize: 20,
+            textAlign: 'center',
           }}
-        />
+        >
+          {artwork.title}{' '}
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              letterSpacing: '0.16em',
+              color: 'var(--ink-mid)',
+              fontStyle: 'normal',
+            }}
+          >
+            · {artwork.height_cm}×{artwork.width_cm} cm
+          </span>
+        </div>
+        <div
+          className="atelier-label"
+          style={{ textAlign: 'right', color: 'var(--ink-mid)' }}
+        >
+          AI Room Preview · 내 공간 미리보기
+        </div>
       </div>
-    </main>
+
+      <PreviewClient
+        artwork={{
+          id: artwork.id,
+          title: artwork.title,
+          width_cm: artwork.width_cm,
+          height_cm: artwork.height_cm,
+          imageUrl,
+          artistName,
+          price: (artwork as unknown as { price?: number }).price ?? null,
+        }}
+      />
+    </div>
   )
 }
