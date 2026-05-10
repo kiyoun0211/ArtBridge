@@ -1,36 +1,131 @@
 import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="max-w-xl w-full text-center">
+    <main
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bone)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 32px',
+      }}
+    >
+      <div style={{ maxWidth: 640, width: '100%', textAlign: 'center' }}>
         {/* Wordmark */}
-        <p className="text-2xl font-semibold mb-20">ArtBridge</p>
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(36px, 6vw, 64px)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          ATELIER
+          <sup
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'clamp(10px, 1.4vw, 16px)',
+              letterSpacing: '0.18em',
+              color: 'var(--ink-mid)',
+              position: 'relative',
+              top: '-12px',
+            }}
+          >
+            1/1
+          </sup>
+        </div>
 
-        {/* Hero */}
-        <h1 className="text-[32px] font-semibold leading-[1.2] mb-4">
-          내 공간에서 만나는 원화
+        {/* Brand line */}
+        <div
+          className="atelier-label"
+          style={{ marginBottom: 64, color: 'var(--ink-mid)' }}
+        >
+          Edition of One
+        </div>
+
+        {/* Hero headline in Instrument Serif italic */}
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(40px, 6vw, 80px)',
+            lineHeight: 0.95,
+            letterSpacing: '-0.03em',
+            margin: '0 0 24px',
+          }}
+        >
+          단 하나뿐인
+          <br />
+          <em style={{ fontStyle: 'italic', color: 'var(--ink-soft)' }}>
+            작품의 마켓플레이스.
+          </em>
         </h1>
-        <p className="text-base leading-relaxed mb-12 text-muted-foreground">
-          작가와 직접 연결되는 AI 미술 작품 플랫폼
+
+        <p
+          style={{
+            fontSize: 15,
+            lineHeight: 1.7,
+            color: 'var(--ink-soft)',
+            maxWidth: '46ch',
+            margin: '0 auto 48px',
+          }}
+        >
+          작가와 직접 연결되는 원화 컬렉션. 구매 전 내 공간에서 실제 크기로 미리 확인하세요.
         </p>
 
-        {/* CTAs — using buttonVariants for consistent button styling on Link elements */}
-        <div className="flex gap-3 justify-center flex-wrap">
+        {/* CTAs */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link
+            href="/buyer"
+            className="atelier-btn atelier-btn--xl"
+            style={{ minHeight: 44 }}
+          >
+            Discover works →
+          </Link>
           <Link
             href="/login"
-            className={cn(buttonVariants({ variant: 'default', size: 'lg' }), 'min-h-[44px]')}
+            className="atelier-btn atelier-btn--ghost atelier-btn--xl"
+            style={{ minHeight: 44 }}
           >
             로그인
           </Link>
-          <Link
-            href="/signup"
-            className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'min-h-[44px]')}
+        </div>
+
+        {/* Hairline divider + tagline */}
+        <div
+          style={{
+            marginTop: 80,
+            paddingTop: 32,
+            borderTop: '1px solid var(--rule-soft)',
+          }}
+        >
+          <div
+            className="atelier-label"
+            style={{
+              color: 'var(--ink-mute)',
+              display: 'flex',
+              gap: 24,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+            }}
           >
-            회원가입
-          </Link>
+            <span>작가 등록</span>
+            <span style={{ color: 'var(--rule)' }}>·</span>
+            <Link href="/signup" style={{ color: 'var(--ink-mid)' }}>
+              회원가입
+            </Link>
+            <span style={{ color: 'var(--rule)' }}>·</span>
+            <Link href="/artist" style={{ color: 'var(--ink-mid)' }}>
+              작가 대시보드
+            </Link>
+          </div>
         </div>
       </div>
     </main>
