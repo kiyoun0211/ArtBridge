@@ -171,7 +171,7 @@ export default async function ArtworkDetailPage({ params }: Props) {
             )}
 
             {/* Action button — placeholder, payment/bidding in future phase */}
-            <div className="mt-2">
+            <div className="mt-2 flex flex-col gap-3">
               <button
                 type="button"
                 disabled
@@ -185,9 +185,24 @@ export default async function ArtworkDetailPage({ params }: Props) {
               >
                 {artwork.sale_type === 'auction' ? '입찰하기' : '구매 문의'}
               </button>
-              <p className="mt-2 text-center text-[12px]" style={{ color: 'var(--color-muted)' }}>
+              <p className="text-center text-[12px]" style={{ color: 'var(--color-muted)' }}>
                 준비 중입니다
               </p>
+
+              {/* Space preview CTA */}
+              <Link href={`/artwork/${id}/preview`} className="block">
+                <button
+                  type="button"
+                  className="w-full h-12 rounded-lg text-[14px] font-medium transition-opacity focus:outline-none focus-visible:ring-2"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-foreground)',
+                  }}
+                >
+                  내 공간에 미리 보기
+                </button>
+              </Link>
             </div>
           </div>
         </div>
