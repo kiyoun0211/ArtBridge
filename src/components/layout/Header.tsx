@@ -2,7 +2,12 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { logoutAction } from '@/actions/auth'
 
-export function Header({ email }: { email?: string }) {
+type HeaderProps = {
+  email?: string
+  role?: 'artist' | 'buyer'
+}
+
+export function Header({ email, role }: HeaderProps) {
   return (
     <header
       className="w-full h-14 flex items-center justify-between px-4 md:px-6"
@@ -17,6 +22,26 @@ export function Header({ email }: { email?: string }) {
       </Link>
 
       <div className="flex items-center gap-3">
+        {/* Role-specific navigation links */}
+        {role === 'artist' && (
+          <Link
+            href="/artist/upload"
+            className="hidden sm:inline text-[14px] font-medium min-h-[44px] flex items-center px-2"
+            style={{ color: 'var(--color-foreground)' }}
+          >
+            작품 등록
+          </Link>
+        )}
+        {role === 'buyer' && (
+          <Link
+            href="/buyer"
+            className="hidden sm:inline text-[14px] font-medium min-h-[44px] flex items-center px-2"
+            style={{ color: 'var(--color-foreground)' }}
+          >
+            둘러보기
+          </Link>
+        )}
+
         {email && (
           <span
             className="hidden sm:inline text-[14px]"
