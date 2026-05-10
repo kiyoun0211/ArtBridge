@@ -5,10 +5,10 @@ import { BuyerHeader } from '@/components/layout/BuyerHeader'
 import { PreviewClient } from './PreviewClient'
 
 const ARTIST_EN_NAMES: Record<string, string> = {
-  박지혜: 'Park Jihye',
-  김민수: 'Kim Minsoo',
-  이해인: 'Lee Haein',
-  정태양: 'Jung Taeyang',
+  윤아라: 'Yoon Ara',
+  김지호: 'Kim Jiho',
+  이해온: 'Lee Hae-on',
+  박온유: 'Park Onyu',
 }
 
 type Props = {

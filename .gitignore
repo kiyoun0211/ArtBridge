@@ -31,3 +31,4 @@ Thumbs.db
 *.swo
 .vercel
 .supabase-db-password.local
+.design-source/
