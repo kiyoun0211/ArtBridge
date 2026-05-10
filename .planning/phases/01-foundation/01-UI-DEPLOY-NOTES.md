@@ -116,3 +116,25 @@ Route (app)
 ```
 
 All pages are statically prerendered (○ = Static).
+
+---
+
+## Deploy Status (Updated 2026-05-10)
+
+**Live URLs:**
+- Production alias: https://artbridge-kappa.vercel.app
+- Latest deployment: https://artbridge-3tfbtq8yo-younjae-ki-s-projects.vercel.app
+- Dashboard: https://vercel.com/younjae-ki-s-projects/artbridge
+
+**Routes verified (all HTTP 200):** `/`, `/signup`, `/login`, `/artist`, `/buyer`, `/auth/callback`
+
+**Deploy workflow:** Manual CLI only (no GitHub App integration by user choice).
+
+To redeploy after code changes:
+```
+git add . && git commit -m "..."   # commit your changes locally
+git push origin main                # push to GitHub (history backup)
+npx vercel deploy --prod --yes --token <FRESH_TOKEN>
+```
+
+Where `<FRESH_TOKEN>` is generated at https://vercel.com/account/tokens (use short expiration, revoke after).
