@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function HomePage() {
   return (
@@ -8,35 +10,24 @@ export default function HomePage() {
         <p className="text-2xl font-semibold mb-20">ArtBridge</p>
 
         {/* Hero */}
-        <h1
-          className="text-[32px] font-semibold leading-[1.2] mb-4"
-          style={{ color: 'var(--color-foreground)' }}
-        >
+        <h1 className="text-[32px] font-semibold leading-[1.2] mb-4">
           내 공간에서 만나는 원화
         </h1>
-        <p
-          className="text-base leading-relaxed mb-12"
-          style={{ color: 'var(--color-muted)' }}
-        >
+        <p className="text-base leading-relaxed mb-12 text-muted-foreground">
           작가와 직접 연결되는 AI 미술 작품 플랫폼
         </p>
 
-        {/* CTAs */}
+        {/* CTAs — using buttonVariants for consistent button styling on Link elements */}
         <div className="flex gap-3 justify-center flex-wrap">
           <Link
             href="/login"
-            className="inline-flex items-center justify-center min-h-[44px] px-6 rounded-[6px] text-sm font-semibold text-white"
-            style={{ background: 'var(--color-accent)' }}
+            className={cn(buttonVariants({ variant: 'default', size: 'lg' }), 'min-h-[44px]')}
           >
             로그인
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center min-h-[44px] px-6 rounded-[6px] text-sm font-semibold border"
-            style={{
-              color: 'var(--color-foreground)',
-              borderColor: 'var(--color-border)',
-            }}
+            className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'min-h-[44px]')}
           >
             회원가입
           </Link>
