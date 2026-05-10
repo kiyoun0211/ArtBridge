@@ -1,24 +1,19 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { BuyerHeader } from '@/components/layout/BuyerHeader'
+import { DetailClient } from './DetailClient'
 
-const SALE_TYPE_LABELS: Record<string, string> = {
-  fixed: '정찰제',
-  auction: '경매',
+// EN name mapping for seeded artists
+const ARTIST_EN_NAMES: Record<string, string> = {
+  박지혜: 'Park Jihye',
+  김민수: 'Kim Minsoo',
+  이해인: 'Lee Haein',
+  정태양: 'Jung Taeyang',
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  available: '판매 중',
-  auctioning: '경매 중',
-  sold: '판매 완료',
-  draft: '임시 저장',
-  cancelled: '취소됨',
-}
-
-function formatKRW(price: number | null): string {
-  if (price == null) return '가격 미정'
-  return `₩${new Intl.NumberFormat('ko-KR').format(price)}`
+function artistEnName(displayName: string | null | undefined): string {
+  if (!displayName) return ''
+  return ARTIST_EN_NAMES[displayName] ?? ''
 }
 
 type Props = {
@@ -28,23 +23,21 @@ type Props = {
 export default async function ArtworkDetailPage({ params }: Props) {
   const { id } = await params
 
-  // Use admin client for public detail page — artwork-originals is private.
-  // TODO: replace with public mockup_url once AI generation is wired (Phase 2)
   const admin = createAdminClient()
 
   const { data: artwork } = await admin
     .from('artworks')
-    .select('*, profiles!artworks_artist_id_fkey(email, display_name)')
+    .select('*, profiles!artworks_artist_id_fkey(id, email, display_name)')
     .eq('id', id)
     .single()
 
   if (!artwork) notFound()
 
   const artworkWithProfile = artwork as typeof artwork & {
-    profiles: { email: string; display_name: string | null } | null
+    profiles: { id: string; email: string; display_name: string | null } | null
   }
 
-  // Resolve image URL: mockup_url first, then signed original
+  // Resolve image URL
   let imageUrl: string | null = artwork.mockup_url ?? null
   if (!imageUrl && artwork.storage_path) {
     const { data: urlData } = await admin.storage
@@ -53,160 +46,37 @@ export default async function ArtworkDetailPage({ params }: Props) {
     imageUrl = urlData?.signedUrl ?? null
   }
 
-  // Compute aspect ratio for image display
-  const aspectRatio = artwork.width_cm / artwork.height_cm
-  // Clamp to reasonable display range
-  const clampedRatio = Math.max(0.4, Math.min(2.5, aspectRatio))
-  const paddingTop = `${(1 / clampedRatio) * 100}%`
-
-  const artistLabel =
+  const artistName =
     artworkWithProfile.profiles?.display_name ?? artworkWithProfile.profiles?.email ?? '작가 정보 없음'
+  const artistId = artworkWithProfile.profiles?.id ?? ''
+
+  // Extract year from created_at if DB field not present
+  const year = (artwork as unknown as { year?: number })?.year
+    ?? new Date(artwork.created_at).getFullYear()
 
   return (
-    <main
-      className="min-h-screen px-4 md:px-6 py-10"
-      style={{ background: 'var(--color-background)' }}
-    >
-      <div className="w-full max-w-5xl mx-auto">
-        {/* Back link */}
-        <Link
-          href="/buyer"
-          className="inline-block mb-8 text-[14px]"
-          style={{ color: 'var(--color-muted)' }}
-        >
-          ← 둘러보기로 돌아가기
-        </Link>
-
-        {/* Two-column layout on lg+ */}
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-          {/* Image column */}
-          <div className="lg:flex-1">
-            <div
-              className="relative w-full rounded-xl overflow-hidden"
-              style={{
-                paddingTop,
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              {imageUrl ? (
-                <Image
-                  src={imageUrl}
-                  alt={`작품 — ${artwork.title}`}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
-              ) : (
-                <div
-                  className="absolute inset-0 flex items-center justify-center"
-                  style={{ color: 'var(--color-muted)' }}
-                >
-                  <span className="text-sm">이미지 없음</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Details column */}
-          <div className="lg:w-[360px] flex flex-col gap-5">
-            {/* Title */}
-            <h1
-              className="text-[32px] font-semibold leading-[1.2]"
-              style={{ color: 'var(--color-foreground)' }}
-            >
-              {artwork.title}
-            </h1>
-
-            {/* Artist */}
-            <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
-              작가: {artistLabel}
-            </p>
-
-            {/* Size */}
-            <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
-              사이즈: 가로 {artwork.width_cm}cm × 세로 {artwork.height_cm}cm
-            </p>
-
-            {/* Status + Sale type */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="inline-block text-[13px] font-medium px-3 py-1 rounded"
-                style={{
-                  background: 'var(--color-border)',
-                  color: 'var(--color-muted)',
-                }}
-              >
-                {STATUS_LABELS[artwork.status] ?? artwork.status}
-              </span>
-              <span
-                className="inline-block text-[13px] font-medium px-3 py-1 rounded"
-                style={{
-                  background: 'var(--color-background)',
-                  color: 'var(--color-muted)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                {SALE_TYPE_LABELS[artwork.sale_type] ?? artwork.sale_type}
-              </span>
-            </div>
-
-            {/* Price */}
-            <p
-              className="text-[26px] font-semibold"
-              style={{ color: 'var(--color-foreground)' }}
-            >
-              {formatKRW(artwork.price)}
-            </p>
-
-            {/* Description */}
-            {artwork.description && (
-              <p
-                className="text-[14px] leading-relaxed whitespace-pre-line"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                {artwork.description}
-              </p>
-            )}
-
-            {/* Action button — placeholder, payment/bidding in future phase */}
-            <div className="mt-2 flex flex-col gap-3">
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                title="준비 중입니다"
-                className="w-full h-12 rounded-lg text-[14px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-                style={{
-                  background: 'var(--color-accent)',
-                  color: '#ffffff',
-                }}
-              >
-                {artwork.sale_type === 'auction' ? '입찰하기' : '구매 문의'}
-              </button>
-              <p className="text-center text-[12px]" style={{ color: 'var(--color-muted)' }}>
-                준비 중입니다
-              </p>
-
-              {/* Space preview CTA */}
-              <Link href={`/artwork/${id}/preview`} className="block">
-                <button
-                  type="button"
-                  className="w-full h-12 rounded-lg text-[14px] font-medium transition-opacity focus:outline-none focus-visible:ring-2"
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-foreground)',
-                  }}
-                >
-                  내 공간에 미리 보기
-                </button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+    <div style={{ minHeight: '100vh', background: 'var(--bone)' }}>
+      <BuyerHeader />
+      <DetailClient
+        artwork={{
+          id: artwork.id,
+          title: artwork.title,
+          status: artwork.status,
+          sale_type: artwork.sale_type,
+          price: artwork.price,
+          width_cm: artwork.width_cm,
+          height_cm: artwork.height_cm,
+          description: artwork.description,
+          imageUrl,
+          artistId,
+          artistName,
+          artistEnName: artistEnName(artworkWithProfile.profiles?.display_name),
+          year,
+          medium: (artwork as unknown as { medium?: string })?.medium ?? null,
+          auction_ends_at:
+            (artwork as unknown as { auction_ends_at?: string })?.auction_ends_at ?? null,
+        }}
+      />
+    </div>
   )
 }
