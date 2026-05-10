@@ -97,9 +97,16 @@ export async function generateMockup(
   const roomBuffer = Buffer.from(roomArrayBuffer)
 
   // Get room dimensions
-  const roomMeta = await sharp(roomBuffer).metadata()
-  const roomPxW = roomMeta.width ?? 0
-  const roomPxH = roomMeta.height ?? 0
+  let roomPxW = 0
+  let roomPxH = 0
+  try {
+    const roomMeta = await sharp(roomBuffer).rotate().metadata()
+    roomPxW = roomMeta.width ?? 0
+    roomPxH = roomMeta.height ?? 0
+  } catch (err) {
+    console.error('[mockup] room metadata failed:', err)
+    return { status: 'error', error: '방 사진을 처리할 수 없습니다. 다른 사진을 시도해 주세요.' }
+  }
 
   if (roomPxW === 0 || roomPxH === 0) {
     return { status: 'error', error: '방 사진의 크기를 확인할 수 없습니다.' }
@@ -137,30 +144,29 @@ export async function generateMockup(
     warning = `작품이 화면보다 커서 90% 크기로 축소하여 표시합니다. 실제 벽 폭(cm)이 정확한지 확인해 주세요.`
   }
 
-  // Resize artwork to computed pixel dimensions
-  const resizedArtworkBuffer = await sharp(artworkBuffer)
-    .resize(artworkPxW, artworkPxH, { fit: 'fill' })
-    .toBuffer()
-
   // Compute composite position: center horizontally, 30% from top
   const left = Math.round((roomPxW - artworkPxW) / 2)
   let top = Math.round(roomPxH * 0.3)
-  // Clamp: ensure artwork bottom doesn't exceed room height (16px margin)
   top = Math.min(top, roomPxH - artworkPxH - 16)
-  // Ensure top is non-negative
   top = Math.max(0, top)
 
-  // Composite artwork onto room image
-  const compositeBuffer = await sharp(roomBuffer)
-    .composite([
-      {
-        input: resizedArtworkBuffer,
-        left,
-        top,
-      },
-    ])
-    .jpeg({ quality: 88 })
-    .toBuffer()
+  // Resize artwork + composite onto room image (auto-rotate so EXIF orientation is honored)
+  let compositeBuffer: Buffer
+  try {
+    const resizedArtworkBuffer = await sharp(artworkBuffer)
+      .resize(artworkPxW, artworkPxH, { fit: 'fill' })
+      .png()
+      .toBuffer()
+
+    compositeBuffer = await sharp(roomBuffer)
+      .rotate()
+      .composite([{ input: resizedArtworkBuffer, left, top }])
+      .jpeg({ quality: 88 })
+      .toBuffer()
+  } catch (err) {
+    console.error('[mockup] composite failed:', err)
+    return { status: 'error', error: '이미지 합성에 실패했습니다. 다른 사진으로 시도해 주세요.' }
+  }
 
   // Upload composite to space-uploads bucket
   const storagePath = `${userId}/preview-${artworkId}-${Date.now()}.jpg`

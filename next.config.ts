@@ -1,6 +1,12 @@
 import type { NextConfig } from 'next'
 
 const config: NextConfig = {
+  serverExternalPackages: ['sharp'],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '12mb',
+    },
+  },
   images: {
     remotePatterns: [
       {
