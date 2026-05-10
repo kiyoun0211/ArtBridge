@@ -7,6 +7,14 @@ const config: NextConfig = {
         protocol: 'https',
         hostname: 'qbyzqqwkdfclnwqomgde.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'fastly.picsum.photos',
+      },
     ],
   },
 }
