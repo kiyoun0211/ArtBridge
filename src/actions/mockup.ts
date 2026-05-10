@@ -34,6 +34,17 @@ export async function generateMockup(
   _prev: MockupState,
   formData: FormData,
 ): Promise<MockupState> {
+  try {
+    return await runMockup(formData)
+  } catch (err) {
+    console.error('[mockup] uncaught error:', err)
+    const detail = err instanceof Error ? err.message : String(err)
+    return { status: 'error', error: `합성 중 오류가 발생했습니다: ${detail}` }
+  }
+}
+
+async function runMockup(formData: FormData): Promise<MockupState> {
+  console.log('[mockup] start')
   // Auth: require any authenticated user
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
@@ -44,10 +55,17 @@ export async function generateMockup(
 
   // Validate room image file
   const roomImageFile = formData.get('roomImage')
+  console.log('[mockup] file received:', {
+    isFile: roomImageFile instanceof File,
+    name: roomImageFile instanceof File ? roomImageFile.name : null,
+    type: roomImageFile instanceof File ? roomImageFile.type : null,
+    size: roomImageFile instanceof File ? roomImageFile.size : null,
+  })
   if (!(roomImageFile instanceof File) || roomImageFile.size === 0) {
     return { status: 'error', error: '방 사진을 선택해 주세요.' }
   }
-  if (!roomImageFile.type.startsWith('image/')) {
+  // Loosened MIME check: some browsers/iOS send empty type for HEIC/HEIF
+  if (roomImageFile.type && !roomImageFile.type.startsWith('image/')) {
     return { status: 'error', error: '이미지 파일(JPG, PNG 등)만 업로드할 수 있습니다.' }
   }
   if (roomImageFile.size > MAX_ROOM_FILE_SIZE) {

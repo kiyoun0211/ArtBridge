@@ -1,8 +1,11 @@
 'use client'
 
-import { useActionState, useRef } from 'react'
+import { useActionState, useRef, useState } from 'react'
 import Image from 'next/image'
 import { generateMockup, type MockupState } from '@/actions/mockup'
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE_MB = 10
 
 type ArtworkPreviewInfo = {
   id: string
@@ -21,11 +24,26 @@ const initialState: MockupState = { status: 'idle' }
 export function PreviewClient({ artwork }: Props) {
   const [state, formAction, isPending] = useActionState(generateMockup, initialState)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [clientError, setClientError] = useState<string | null>(null)
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    setClientError(null)
+    if (!file) return
+    if (file.size > MAX_FILE_SIZE) {
+      const mb = (file.size / 1024 / 1024).toFixed(1)
+      setClientError(`사진이 너무 큽니다 (${mb}MB). ${MAX_FILE_SIZE_MB}MB 이하로 줄여서 다시 올려주세요.`)
+      e.target.value = ''
+    }
+  }
+
+  const errorMessage =
+    clientError ?? (state.status === 'error' ? state.error : null)
 
   return (
     <div className="flex flex-col gap-8">
       {/* Error alert */}
-      {state.status === 'error' && (
+      {errorMessage && (
         <div
           role="alert"
           className="rounded-lg px-4 py-3 text-[14px]"
@@ -35,7 +53,7 @@ export function PreviewClient({ artwork }: Props) {
             color: 'var(--color-destructive)',
           }}
         >
-          {state.error}
+          {errorMessage}
         </div>
       )}
 
@@ -91,8 +109,9 @@ export function PreviewClient({ artwork }: Props) {
               id="roomImage"
               name="roomImage"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               required
+              onChange={handleFileChange}
               className="block w-full min-h-[44px] rounded-lg px-3 py-2 text-[14px] cursor-pointer focus:outline-none focus-visible:ring-2"
               style={{
                 background: 'var(--color-background)',
