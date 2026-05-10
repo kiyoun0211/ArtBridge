@@ -22,13 +22,12 @@ export type MockupState =
 
 const MAX_ROOM_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
-// TODO: Replace Picsum seeds with real CC0 interior photo URLs for production.
-//       Picsum returns generic photos — not actual interior rooms.
+// Preset interior photos — Unsplash URLs from the ATELIER 1/1 design's data.js (free license).
 const PRESET_ROOMS: Record<string, string> = {
-  living:  'https://picsum.photos/seed/atelier-room-living/1600/1200',
-  bedroom: 'https://picsum.photos/seed/atelier-room-bedroom/1600/1200',
-  studio:  'https://picsum.photos/seed/atelier-room-studio/1600/1200',
-  loft:    'https://picsum.photos/seed/atelier-room-loft/1600/1200',
+  loft:    'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1400&q=80', // Loft, white wall
+  bedroom: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1400&q=80', // Bedroom, oblique
+  living:  'https://images.unsplash.com/photo-1567016376408-0226e4d0c1ea?w=1400&q=80', // Dining nook (warm)
+  studio:  'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1400&q=80', // Studio, side angle
 }
 
 const MockupSchema = z.object({

@@ -25,11 +25,12 @@ const initialState: MockupState = { status: 'idle' }
 
 type PresetRoom = 'living' | 'bedroom' | 'studio' | 'loft'
 
-const PRESETS: Array<{ id: PresetRoom; label: string; seed: string }> = [
-  { id: 'living', label: 'LIVING', seed: 'atelier-room-living' },
-  { id: 'bedroom', label: 'BEDROOM', seed: 'atelier-room-bedroom' },
-  { id: 'studio', label: 'STUDIO', seed: 'atelier-room-studio' },
-  { id: 'loft', label: 'LOFT', seed: 'atelier-room-loft' },
+// Unsplash interior photos (free license, from the ATELIER 1/1 design's data.js)
+const PRESETS: Array<{ id: PresetRoom; label: string; url: string }> = [
+  { id: 'loft',    label: 'LOFT',    url: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1400&q=80' },
+  { id: 'bedroom', label: 'BEDROOM', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1400&q=80' },
+  { id: 'living',  label: 'DINING',  url: 'https://images.unsplash.com/photo-1567016376408-0226e4d0c1ea?w=1400&q=80' },
+  { id: 'studio',  label: 'STUDIO',  url: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1400&q=80' },
 ]
 
 function formatKRW(price: number | null | undefined): string {
@@ -102,7 +103,7 @@ export function PreviewClient({ artwork }: Props) {
     uploadedFile
       ? URL.createObjectURL(uploadedFile)
       : selectedPreset
-        ? `https://picsum.photos/seed/atelier-room-${selectedPreset}/1600/1200`
+        ? PRESETS.find((p) => p.id === selectedPreset)?.url ?? null
         : null
 
   return (
@@ -329,7 +330,7 @@ export function PreviewClient({ artwork }: Props) {
                   aria-label={`${p.label} 프리셋 룸`}
                   style={{
                     aspectRatio: '4/3',
-                    backgroundImage: `url('https://picsum.photos/seed/${p.seed}/400/300')`,
+                    backgroundImage: `url('${p.url}')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     border: selectedPreset === p.id ? '2px solid var(--ink)' : '2px solid transparent',
