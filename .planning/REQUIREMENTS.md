@@ -70,6 +70,42 @@
 
 ## Traceability
 
-| REQ-ID | Phase | Notes |
-|--------|-------|-------|
-| (filled by ROADMAP.md) | | |
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| AUTH-01 | Phase 1 — Foundation | Pending |
+| AUTH-02 | Phase 1 — Foundation | Pending |
+| AUTH-03 | Phase 1 — Foundation | Pending |
+| AUTH-04 | Phase 1 — Foundation | Pending |
+| SEC-01 | Phase 1 — Foundation | Pending |
+| SEC-02 | Phase 1 — Foundation | Pending |
+| SEC-03 | Phase 1 — Foundation | Pending |
+| ART-01 | Phase 2 — Artwork Listing | Pending |
+| ART-02 | Phase 2 — Artwork Listing | Pending |
+| ART-03 | Phase 2 — Artwork Listing | Pending |
+| ART-04 | Phase 2 — Artwork Listing | Pending |
+| ART-05 | Phase 2 — Artwork Listing | Pending |
+| ART-06 | Phase 2 — Artwork Listing | Pending |
+| AIPROMO-01 | Phase 3 — AI Pipelines | Pending |
+| AIPROMO-02 | Phase 3 — AI Pipelines | Pending |
+| AIPROMO-03 | Phase 3 — AI Pipelines | Pending |
+| AIPROMO-04 | Phase 3 — AI Pipelines | Pending |
+| AIVIZ-01 | Phase 3 — AI Pipelines | Pending |
+| AIVIZ-02 | Phase 3 — AI Pipelines | Pending |
+| AIVIZ-03 | Phase 3 — AI Pipelines | Pending |
+| AIVIZ-04 | Phase 3 — AI Pipelines | Pending |
+| AIVIZ-05 | Phase 3 — AI Pipelines | Pending |
+| BUY-01 | Phase 4 — Fixed-Price Purchase | Pending |
+| BUY-02 | Phase 4 — Fixed-Price Purchase | Pending |
+| BUY-03 | Phase 4 — Fixed-Price Purchase | Pending |
+| BUY-04 | Phase 4 — Fixed-Price Purchase | Pending |
+| BUY-05 | Phase 4 — Fixed-Price Purchase | Pending |
+| AUC-01 | Phase 5 — Real-Time Auction | Pending |
+| AUC-02 | Phase 5 — Real-Time Auction | Pending |
+| AUC-03 | Phase 5 — Real-Time Auction | Pending |
+| AUC-04 | Phase 5 — Real-Time Auction | Pending |
+| AUC-05 | Phase 5 — Real-Time Auction | Pending |
+| AUC-06 | Phase 5 — Real-Time Auction | Pending |
+| NOTIF-01 | Phase 6 — Notifications & Watchlist | Pending |
+| NOTIF-02 | Phase 6 — Notifications & Watchlist | Pending |
+| NOTIF-03 | Phase 6 — Notifications & Watchlist | Pending |
+| NOTIF-04 | Phase 6 — Notifications & Watchlist | Pending |
