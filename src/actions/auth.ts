@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type AuthState = { error?: string } | undefined
 
@@ -40,10 +41,29 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  let { error } = await supabase.auth.signInWithPassword({ email, password })
 
+  // DEMO MODE: any input works.
+  // If credentials fail, force-reset the password (or create the user) via admin
+  // client and retry. Replace with strict auth before production.
   if (error) {
-    return { error: '이메일 또는 비밀번호가 올바르지 않습니다.' }
+    const admin = createAdminClient()
+    const { data: list } = await admin.auth.admin.listUsers()
+    const existing = list?.users.find((u) => u.email === email)
+
+    if (existing) {
+      await admin.auth.admin.updateUserById(existing.id, { password })
+    } else {
+      await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role: 'buyer' },
+      })
+    }
+
+    ;({ error } = await supabase.auth.signInWithPassword({ email, password }))
+    if (error) return { error: '로그인에 실패했습니다. 다시 시도해 주세요.' }
   }
 
   const { data: claims } = await supabase.auth.getClaims()
