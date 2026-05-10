@@ -1077,7 +1077,7 @@ npm run dev
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`getClaims()` vs `getUser()` in `proxy.ts`**
    - What we know: Official docs and the example code use `getClaims()`. It is faster (JWKS cached).

@@ -24,7 +24,13 @@
   3. Visiting an artist-only route as a buyer (or while logged out) results in a redirect, not a 403 error page
   4. Querying any table with only the Supabase anon key returns zero private rows, confirming RLS is active
   5. Original artwork files in the private bucket return a 403 for any public URL access attempt
-**Plans**: TBD
+**Plans:** 5 plans
+Plans:
+- [ ] 01-01-PLAN.md — Project bootstrap & dev environment (Next.js 16, Tailwind v4, Biome, Supabase clients, shadcn/ui, local Supabase stack)
+- [ ] 01-02-PLAN.md — Database schema with RLS (8 tables, policies, storage buckets, signup trigger; includes [BLOCKING] schema push)
+- [ ] 01-03-PLAN.md — Auth flow: signup/login/logout (RHF + Zod, Korean UI from UI-SPEC, header logout)
+- [ ] 01-04-PLAN.md — Role-gated routing (artist/buyer route groups, proxy.ts unauth redirect, no 403)
+- [ ] 01-05-PLAN.md — Verification: RLS leak tests + Playwright E2E (covers all 5 Success Criteria)
 
 ### Phase 2: Artwork Listing
 **Goal**: Artists can upload artworks with physical dimensions and manage their catalog; buyers can browse a public gallery and search by keyword.
