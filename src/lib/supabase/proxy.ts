@@ -2,14 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  // TODO(plan-03): remove guard once Supabase Cloud is wired.
-  // Return early when Supabase env vars are missing or point to local dev instance
-  // so that Vercel UI-only deploys don't crash on missing configuration.
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  if (!supabaseUrl || supabaseUrl.startsWith('http://127.0.0.1')) {
-    return NextResponse.next()
-  }
-
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

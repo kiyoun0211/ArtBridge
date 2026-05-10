@@ -1,14 +1,13 @@
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
-import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
+import { logoutAction } from '@/actions/auth'
 
-export function Header() {
+export function Header({ email }: { email?: string }) {
   return (
     <header
       className="w-full h-14 flex items-center justify-between px-4 md:px-6"
       style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }}
     >
-      {/* Wordmark */}
       <Link
         href="/"
         className="text-xl font-semibold"
@@ -17,13 +16,25 @@ export function Header() {
         ArtBridge
       </Link>
 
-      {/* Logout — routes to / with no Server Action in UI-only mode */}
-      <Link
-        href="/"
-        className={cn(buttonVariants({ variant: 'ghost' }), 'min-h-[44px] text-sm font-semibold')}
-      >
-        로그아웃
-      </Link>
+      <div className="flex items-center gap-3">
+        {email && (
+          <span
+            className="hidden sm:inline text-[14px]"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            {email}
+          </span>
+        )}
+        <form action={logoutAction}>
+          <Button
+            type="submit"
+            variant="ghost"
+            className="min-h-[44px] text-sm font-semibold"
+          >
+            로그아웃
+          </Button>
+        </form>
+      </div>
     </header>
   )
 }
