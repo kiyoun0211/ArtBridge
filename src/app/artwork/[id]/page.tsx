@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { BuyerHeader } from '@/components/layout/BuyerHeader'
 import { DetailClient } from './DetailClient'
 
-// EN name mapping for seeded artists
 const ARTIST_EN_NAMES: Record<string, string> = {
   윤아라: 'Yoon Ara',
   김지호: 'Kim Jiho',
@@ -11,9 +10,9 @@ const ARTIST_EN_NAMES: Record<string, string> = {
   박온유: 'Park Onyu',
 }
 
-function artistEnName(displayName: string | null | undefined): string {
-  if (!displayName) return ''
-  return ARTIST_EN_NAMES[displayName] ?? ''
+function artistEnName(nameKr: string | null | undefined, fallback: string): string {
+  if (!nameKr) return fallback
+  return ARTIST_EN_NAMES[nameKr] ?? fallback
 }
 
 type Props = {
@@ -22,37 +21,26 @@ type Props = {
 
 export default async function ArtworkDetailPage({ params }: Props) {
   const { id } = await params
-
   const admin = createAdminClient()
 
   const { data: artwork } = await admin
     .from('artworks')
-    .select('*, profiles!artworks_artist_id_fkey(id, email, display_name)')
+    .select(
+      'id, artist_id, title, title_kr, year, medium, medium_kr, width_cm, height_cm, body_text, image_url, mode, price_krw, status, current_bid_krw, auction_ends_at',
+    )
     .eq('id', id)
-    .single()
+    .maybeSingle()
 
   if (!artwork) notFound()
 
-  const artworkWithProfile = artwork as typeof artwork & {
-    profiles: { id: string; email: string; display_name: string | null } | null
-  }
+  const { data: artist } = await admin
+    .from('artists')
+    .select('id, name, name_kr')
+    .eq('id', artwork.artist_id)
+    .maybeSingle()
 
-  // Resolve image URL
-  let imageUrl: string | null = artwork.mockup_url ?? null
-  if (!imageUrl && artwork.storage_path) {
-    const { data: urlData } = await admin.storage
-      .from('artwork-originals')
-      .createSignedUrl(artwork.storage_path, 3600)
-    imageUrl = urlData?.signedUrl ?? null
-  }
-
-  const artistName =
-    artworkWithProfile.profiles?.display_name ?? artworkWithProfile.profiles?.email ?? '작가 정보 없음'
-  const artistId = artworkWithProfile.profiles?.id ?? ''
-
-  // Extract year from created_at if DB field not present
-  const year = (artwork as unknown as { year?: number })?.year
-    ?? new Date(artwork.created_at).getFullYear()
+  const isAuction = artwork.mode === 'auction'
+  const status = isAuction ? 'auctioning' : artwork.status ?? 'available'
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bone)' }}>
@@ -60,21 +48,20 @@ export default async function ArtworkDetailPage({ params }: Props) {
       <DetailClient
         artwork={{
           id: artwork.id,
-          title: artwork.title,
-          status: artwork.status,
-          sale_type: artwork.sale_type,
-          price: artwork.price,
-          width_cm: artwork.width_cm,
-          height_cm: artwork.height_cm,
-          description: artwork.description,
-          imageUrl,
-          artistId,
-          artistName,
-          artistEnName: artistEnName(artworkWithProfile.profiles?.display_name),
-          year,
-          medium: (artwork as unknown as { medium?: string })?.medium ?? null,
-          auction_ends_at:
-            (artwork as unknown as { auction_ends_at?: string })?.auction_ends_at ?? null,
+          title: artwork.title_kr ?? artwork.title,
+          status,
+          sale_type: isAuction ? 'auction' : 'fixed',
+          price: isAuction ? artwork.current_bid_krw : artwork.price_krw,
+          width_cm: Number(artwork.width_cm),
+          height_cm: Number(artwork.height_cm),
+          description: artwork.body_text ?? null,
+          imageUrl: artwork.image_url ?? null,
+          artistId: artist?.id ?? '',
+          artistName: artist?.name_kr ?? artist?.name ?? '작가 정보 없음',
+          artistEnName: artistEnName(artist?.name_kr, artist?.name ?? ''),
+          year: artwork.year ?? null,
+          medium: artwork.medium_kr ?? artwork.medium ?? null,
+          auction_ends_at: artwork.auction_ends_at ?? null,
         }}
       />
     </div>

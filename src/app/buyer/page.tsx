@@ -15,7 +15,6 @@ function formatKRW(price: number | null | undefined): string {
   return `₩${new Intl.NumberFormat('ko-KR').format(price)}`
 }
 
-// Hardcoded EN name mapping for seeded artists
 const ARTIST_EN_NAMES: Record<string, string> = {
   윤아라: 'Yoon Ara',
   김지호: 'Kim Jiho',
@@ -28,7 +27,6 @@ function artistEnName(displayName: string | null | undefined): string {
   return ARTIST_EN_NAMES[displayName] ?? displayName
 }
 
-// Artist portrait gradients (design uses CSS gradients as placeholders)
 const ARTIST_GRADIENTS = [
   'linear-gradient(140deg,#C9B58A,#6F5A38)',
   'linear-gradient(140deg,#A8B7B2,#3F4D49)',
@@ -37,7 +35,7 @@ const ARTIST_GRADIENTS = [
 ]
 
 /* ──────────────────────────────────────────── */
-/* Types                                         */
+/* Types — shape rendered by the page UI         */
 /* ──────────────────────────────────────────── */
 
 type ArtworkRow = {
@@ -48,19 +46,15 @@ type ArtworkRow = {
   price: number | null
   width_cm: number
   height_cm: number
-  storage_path: string | null
-  mockup_url: string | null
-  created_at: string
-  auction_ends_at?: string | null
+  thumbnailUrl: string | null
+  auction_ends_at: string | null
   profiles: { id: string; email: string; display_name: string | null } | null
 }
 
-type ArtistProfile = {
+type ArtistRow = {
   id: string
   email: string
   display_name: string | null
-  role: string
-  created_at: string
 }
 
 /* ──────────────────────────────────────────── */
@@ -73,57 +67,68 @@ export default async function BuyerPage() {
   const userId = data?.claims?.sub
   if (!userId) redirect('/login')
 
-  const { data: profile } = await supabase
+  const { data: profileRow } = await supabase
     .from('profiles')
     .select('email, role')
     .eq('id', userId)
-    .single()
-
-  if (!profile) redirect('/login')
-  if (profile.role !== 'buyer') redirect('/artist')
+    .maybeSingle()
+  const { data: userData } = await supabase.auth.getUser()
+  const profile = {
+    email: profileRow?.email ?? userData.user?.email ?? '',
+    role: profileRow?.role ?? 'buyer',
+  }
 
   const admin = createAdminClient()
 
-  // Fetch artworks (available + auctioning)
-  const { data: artworksRaw } = await admin
-    .from('artworks')
-    .select(
-      'id, title, status, sale_type, price, width_cm, height_cm, storage_path, mockup_url, created_at, auction_ends_at, profiles!artworks_artist_id_fkey(id, email, display_name)',
-    )
-    .in('status', ['available', 'auctioning'])
-    .order('created_at', { ascending: false })
-    .limit(60)
+  // Pull design schema: artists + artworks
+  const [{ data: artistsRaw }, { data: artworksRaw }] = await Promise.all([
+    admin
+      .from('artists')
+      .select('id, name, name_kr, portrait_url, created_at')
+      .order('created_at', { ascending: true }),
+    admin
+      .from('artworks')
+      .select(
+        'id, artist_id, title, title_kr, width_cm, height_cm, image_url, mode, price_krw, current_bid_krw, auction_ends_at, created_at',
+      )
+      .order('created_at', { ascending: false })
+      .limit(60),
+  ])
 
-  const artworks = (artworksRaw ?? []) as unknown as ArtworkRow[]
+  // Build artist lookup so artworks can carry an artist mini-record
+  const artistById = new Map<string, { id: string; name: string; name_kr: string | null }>()
+  for (const a of artistsRaw ?? []) {
+    artistById.set(a.id, { id: a.id, name: a.name, name_kr: a.name_kr })
+  }
 
-  // Resolve thumbnail URLs
-  const artworksWithUrls = await Promise.all(
-    artworks.map(async (aw) => {
-      if (aw.mockup_url) return { ...aw, thumbnailUrl: aw.mockup_url }
-      let thumbnailUrl: string | null = null
-      if (aw.storage_path) {
-        const { data: urlData } = await admin.storage
-          .from('artwork-originals')
-          .createSignedUrl(aw.storage_path, 3600)
-        thumbnailUrl = urlData?.signedUrl ?? null
-      }
-      return { ...aw, thumbnailUrl }
-    }),
-  )
+  // Project artworks into the shape the existing UI already consumes
+  const artworksWithUrls: ArtworkRow[] = (artworksRaw ?? []).map((aw) => {
+    const artist = artistById.get(aw.artist_id)
+    const isAuction = aw.mode === 'auction'
+    return {
+      id: aw.id,
+      title: aw.title_kr ?? aw.title,
+      status: isAuction ? 'auctioning' : 'available',
+      sale_type: isAuction ? 'auction' : 'fixed',
+      price: isAuction ? aw.current_bid_krw : aw.price_krw,
+      width_cm: Number(aw.width_cm),
+      height_cm: Number(aw.height_cm),
+      thumbnailUrl: aw.image_url ?? null,
+      auction_ends_at: aw.auction_ends_at ?? null,
+      profiles: artist
+        ? { id: artist.id, email: artist.name, display_name: artist.name_kr }
+        : null,
+    }
+  })
 
-  // Fetch artist profiles
-  const { data: artistsRaw } = await admin
-    .from('profiles')
-    .select('id, email, display_name, role, created_at')
-    .eq('role', 'artist')
-    .order('created_at', { ascending: true })
-    .limit(8)
+  const artists: ArtistRow[] = (artistsRaw ?? []).map((a) => ({
+    id: a.id,
+    email: a.name,
+    display_name: a.name_kr,
+  }))
 
-  const artists = (artistsRaw ?? []) as ArtistProfile[]
-
-  // Split artworks
   const featuredArtwork = artworksWithUrls[0] ?? null
-  const wallWorks = artworksWithUrls.slice(0, 8) // Long Wall
+  const wallWorks = artworksWithUrls.slice(0, 8)
   const liveWorks = artworksWithUrls.filter((aw) => aw.status === 'auctioning').slice(0, 4)
   const fixedWorks = artworksWithUrls.filter((aw) => aw.status === 'available')
 

@@ -76,9 +76,13 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
     .from('profiles')
     .select('role')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
-  redirect(profile?.role === 'artist' ? '/artist' : '/buyer')
+  const { data: userData } = await supabase.auth.getUser()
+  const metaRole = (userData.user?.user_metadata as { role?: string } | null)?.role
+  const role = profile?.role ?? metaRole ?? 'buyer'
+
+  redirect(role === 'artist' ? '/artist' : '/buyer')
 }
 
 export async function logoutAction() {

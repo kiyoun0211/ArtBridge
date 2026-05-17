@@ -22,27 +22,23 @@ export default async function ArtworkPreviewPage({ params }: Props) {
 
   const { data: artwork } = await admin
     .from('artworks')
-    .select('id, title, width_cm, height_cm, mockup_url, storage_path, price, profiles!artworks_artist_id_fkey(display_name, email)')
+    .select('id, artist_id, title, title_kr, width_cm, height_cm, image_url, mode, price_krw, current_bid_krw')
     .eq('id', id)
-    .single()
+    .maybeSingle()
 
   if (!artwork) notFound()
 
-  const artworkWithProfile = artwork as typeof artwork & {
-    profiles: { display_name: string | null; email: string } | null
-  }
+  const { data: artist } = await admin
+    .from('artists')
+    .select('name, name_kr')
+    .eq('id', artwork.artist_id)
+    .maybeSingle()
 
-  // Resolve artwork image URL
-  let imageUrl: string | null = artwork.mockup_url ?? null
-  if (!imageUrl && artwork.storage_path) {
-    const { data: urlData } = await admin.storage
-      .from('artwork-originals')
-      .createSignedUrl(artwork.storage_path, 3600)
-    imageUrl = urlData?.signedUrl ?? null
-  }
-
-  const displayName = artworkWithProfile.profiles?.display_name ?? artworkWithProfile.profiles?.email ?? '작가'
-  const artistName = (ARTIST_EN_NAMES[displayName] ?? '') || displayName
+  const imageUrl: string | null = artwork.image_url ?? null
+  const displayName = artist?.name_kr ?? artist?.name ?? '작가'
+  const artistName = ARTIST_EN_NAMES[displayName] ?? artist?.name ?? displayName
+  const title = artwork.title_kr ?? artwork.title
+  const price = artwork.mode === 'auction' ? artwork.current_bid_krw : artwork.price_krw
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bone)' }}>
@@ -76,7 +72,7 @@ export default async function ArtworkPreviewPage({ params }: Props) {
             textAlign: 'center',
           }}
         >
-          {artwork.title}{' '}
+          {title}{' '}
           <span
             style={{
               fontFamily: 'var(--font-mono)',
@@ -100,12 +96,12 @@ export default async function ArtworkPreviewPage({ params }: Props) {
       <PreviewClient
         artwork={{
           id: artwork.id,
-          title: artwork.title,
-          width_cm: artwork.width_cm,
-          height_cm: artwork.height_cm,
+          title,
+          width_cm: Number(artwork.width_cm),
+          height_cm: Number(artwork.height_cm),
           imageUrl,
           artistName,
-          price: (artwork as unknown as { price?: number }).price ?? null,
+          price,
         }}
       />
     </div>

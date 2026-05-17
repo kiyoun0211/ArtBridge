@@ -48,44 +48,45 @@ export default async function ArtistProfilePage({ params }: Props) {
 
   const admin = createAdminClient()
 
-  // Fetch artist profile
+  // Fetch artist from design schema
   const { data: artist } = await admin
-    .from('profiles')
-    .select('id, email, display_name, role, created_at')
+    .from('artists')
+    .select('id, name, name_kr, location, active_since, bio_kr, bio_en, portrait_url, works_count, sold_count, followers')
     .eq('id', id)
-    .single()
+    .maybeSingle()
 
-  if (!artist || artist.role !== 'artist') notFound()
+  if (!artist) notFound()
 
-  // Fetch artist's artworks
+  // Fetch this artist's artworks
   const { data: artworksRaw } = await admin
     .from('artworks')
-    .select('id, title, status, sale_type, price, width_cm, height_cm, storage_path, mockup_url, created_at')
+    .select('id, title, title_kr, mode, status, price_krw, current_bid_krw, width_cm, height_cm, image_url, year, created_at')
     .eq('artist_id', id)
-    .in('status', ['available', 'auctioning', 'sold'])
     .order('created_at', { ascending: false })
 
-  const artworks = artworksRaw ?? []
+  const artworksWithUrls = (artworksRaw ?? []).map((aw) => {
+    const isAuction = aw.mode === 'auction'
+    return {
+      id: aw.id,
+      title: aw.title_kr ?? aw.title,
+      status: isAuction ? 'auctioning' : aw.status ?? 'available',
+      price: isAuction ? aw.current_bid_krw : aw.price_krw,
+      width_cm: Number(aw.width_cm),
+      height_cm: Number(aw.height_cm),
+      thumbnailUrl: aw.image_url ?? null,
+      created_at: aw.year ? `${aw.year}-01-01T00:00:00Z` : aw.created_at,
+    }
+  })
 
-  // Resolve artwork URLs
-  const artworksWithUrls = await Promise.all(
-    artworks.map(async (aw) => {
-      if (aw.mockup_url) return { ...aw, thumbnailUrl: aw.mockup_url }
-      let thumbnailUrl: string | null = null
-      if (aw.storage_path) {
-        const { data: urlData } = await admin.storage
-          .from('artwork-originals')
-          .createSignedUrl(aw.storage_path, 3600)
-        thumbnailUrl = urlData?.signedUrl ?? null
-      }
-      return { ...aw, thumbnailUrl }
-    }),
-  )
-
-  const displayName = artist.display_name ?? artist.email
-  const enName = artistEnName(artist.display_name)
-  const worksCount = artworks.length
-  const soldCount = artworks.filter((aw) => aw.status === 'sold').length
+  const displayName = artist.name_kr ?? artist.name
+  const enName = artistEnName(artist.name_kr) || artist.name
+  const worksCount = artist.works_count ?? artworksWithUrls.length
+  const soldCount = artist.sold_count ?? artworksWithUrls.filter((aw) => aw.status === 'sold').length
+  const location = artist.location ?? '—'
+  const activeSince = artist.active_since ?? '—'
+  const followers = artist.followers ?? '—'
+  const bio = artist.bio_kr ?? null
+  const bioEn = artist.bio_en ?? null
 
   // Artist portrait gradient (cycle through by id hash)
   const idHash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
@@ -155,22 +156,23 @@ export default async function ArtistProfilePage({ params }: Props) {
             )}
             <div style={{ display: 'flex', gap: 24, marginTop: 28, fontSize: 13 }}>
               <span>
-                <span className="atelier-label">Based </span> Seoul, KR
+                <span className="atelier-label">Based </span> {location}
               </span>
               <span>
-                <span className="atelier-label">Active </span> since 2018
+                <span className="atelier-label">Active </span> since {activeSince}
               </span>
             </div>
           </div>
 
           <div style={{ maxWidth: '44ch' }}>
-            <p style={{ fontSize: 16, lineHeight: 1.7 }}>
-              단 한 점만 제작된 원화를 통해, 작가와 컬렉터를 직접 연결합니다.
-            </p>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-mid)', marginTop: 14 }}>
-              Each work in the collection is a unique, signed original. ATELIER 1/1 represents
-              artists whose practice centres on the singular artwork.
-            </p>
+            {bio && (
+              <p style={{ fontSize: 16, lineHeight: 1.7 }}>{bio}</p>
+            )}
+            {bioEn && (
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-mid)', marginTop: 14 }}>
+                {bioEn}
+              </p>
+            )}
           </div>
         </div>
 
@@ -222,7 +224,7 @@ export default async function ArtistProfilePage({ params }: Props) {
             {[
               { label: 'Works', value: worksCount },
               { label: 'Sold', value: soldCount },
-              { label: 'Followers', value: '—' },
+              { label: 'Followers', value: followers },
               { label: 'Avg. price', value: '₩3.4M' },
             ].map(({ label, value }) => (
               <div key={label}>
